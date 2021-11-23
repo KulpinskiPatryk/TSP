@@ -77,7 +77,7 @@ def create_entity(dimension):
         x = entity[i]
         y = entity[i + 1]
         full_distance += distance_matrix[x][y]
-    full_distance += distance_matrix[entity[0]][entity[15]]
+    full_distance += distance_matrix[entity[0]][entity[dimension-1]]
     print(full_distance)
     for i in entity:
         live.append(i)
@@ -85,23 +85,36 @@ def create_entity(dimension):
     return live
 
 
+def rewrite_score(a, dimension):
+    full_distance = 0
+    for i in range(dimension - 1):
+        x = a[i]
+        y = a[i + 1]
+        full_distance += distance_matrix[x][y]
+    full_distance += distance_matrix[a[0]][a[dimension - 1]]
+    print(full_distance)
+    a[dimension] = full_distance
+    return a
+
+
+
 if __name__ == '__main__':
     cities_set = []
     cities_tups = []
-    file_data = "20.TSP"
+    file_data = "pr144.tsp"
     #Stworzenie nie edytowalnej listy z miastami
     dimension = produce_final(file_data)
     dimension = int(dimension)
     #stworzenie listy dystansów
     distance_matrix = create_matrix_of_distance(dimension)
-    print(cities_tups)
-    print(distance_matrix)
+    #print(cities_tups)
+    #print(distance_matrix)
     #stworzorzenie osobników
     a = create_entity(dimension)
     b = create_entity(dimension)
     if a[dimension] < b[dimension]:
-        print(a)
+        b = rewrite_score(a, dimension)
     else:
         print(b)
-
+#Dodać w najlepszym wyniku dodatkowe 1 do każdego miejsca aby działało pikobelo
 
