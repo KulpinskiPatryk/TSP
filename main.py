@@ -1,3 +1,4 @@
+import random
 import re
 import numpy as np
 
@@ -78,7 +79,7 @@ def create_entity(dimension):
         y = entity[i + 1]
         full_distance += distance_matrix[x][y]
     full_distance += distance_matrix[entity[0]][entity[dimension-1]]
-    print(full_distance)
+    #print(full_distance)
     for i in entity:
         live.append(i)
     live.append(int(full_distance))
@@ -92,29 +93,87 @@ def rewrite_score(a, dimension):
         y = a[i + 1]
         full_distance += distance_matrix[x][y]
     full_distance += distance_matrix[a[0]][a[dimension - 1]]
-    print(full_distance)
     a[dimension] = full_distance
     return a
 
+
+def tournament_selection(pop, k, dimension):
+    selected = []
+    for i in range(int(k/2)):
+        sel = random.randint(0, k-1)
+        selected.append(pop[sel])
+    best = selected[0].copy()
+    for i in range(int(k/2)):
+        if selected[i][dimension] <= best[dimension]:
+            best = selected[i].copy()
+    return best
+
+
+def cross(parent1, parent2, dimension):
+    child = []
+    child_p1 = []
+    child_p2 = []
+
+    gene_a = random.randint(0, dimension-2)
+    gene_b = random.randint(0, dimension-2)
+
+    start_gene = min(gene_a, gene_b)
+    endGene = max(gene_a, gene_b)
+
+    for i in range(start_gene, endGene):
+        child_p1.append(parent1[i])
+
+    child_p2 = [item for item in parent2 if item not in child_p1]
+
+    child = child_p1 + child_p2
+    return child
+
+
+def mutate(individual, mutationRate):
+    for swapped in range(len(individual)):
+        if (random.random() < mutationRate):
+            swapWith = int(random.random() * len(individual))
+
+            city1 = individual[swapped]
+            city2 = individual[swapWith]
+
+            individual[swapped] = city2
+            individual[swapWith] = city1
+    return individual
 
 
 if __name__ == '__main__':
     cities_set = []
     cities_tups = []
-    file_data = "pr144.tsp"
+    file_data = "ulysses16.tsp"
+    k = 24
+    pop = []
     #Stworzenie nie edytowalnej listy z miastami
     dimension = produce_final(file_data)
     dimension = int(dimension)
     #stworzenie listy dystansów
     distance_matrix = create_matrix_of_distance(dimension)
-    #print(cities_tups)
-    #print(distance_matrix)
     #stworzorzenie osobników
-    a = create_entity(dimension)
-    b = create_entity(dimension)
-    if a[dimension] < b[dimension]:
-        b = rewrite_score(a, dimension)
-    else:
-        print(b)
+    for z in range(k):
+        pop.append(create_entity(dimension))
+    # selekcja
+    children = []
+    for z in range(k):
+        children.append(tournament_selection(pop, k, dimension))
+    pop = children.copy()
+    print(cross(pop[0], pop[1], dimension))
+
+    #mut
+    #repeat
+    #goodprint
+
+
+
+
+
+    #if a[dimension] < b[dimension]:
+    #    b = rewrite_score(a, dimension)
+    #else:
+    #    print(b)
 #Dodać w najlepszym wyniku dodatkowe 1 do każdego miejsca aby działało pikobelo
 
