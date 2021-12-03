@@ -1,6 +1,7 @@
 import random
 import re
 import numpy as np
+import sys
 
 
 def read_tsp_data(tsp_name):
@@ -93,7 +94,7 @@ def rewrite_score(a, dimension):
         y = a[i + 1]
         full_distance += distance_matrix[x][y]
     full_distance += distance_matrix[a[0]][a[dimension - 1]]
-    a[dimension] = full_distance
+    a[dimension] = int(full_distance)
     return a
 
 
@@ -130,9 +131,9 @@ def cross(parent1, parent2, dimension):
 
 
 def mutate(individual, mutationRate):
-    for swapped in range(len(individual)):
+    for swapped in range(len(individual)-1):
         if (random.random() < mutationRate):
-            swapWith = int(random.random() * len(individual))
+            swapWith = int(random.random() * (len(individual)-1))
 
             city1 = individual[swapped]
             city2 = individual[swapWith]
@@ -142,38 +143,62 @@ def mutate(individual, mutationRate):
     return individual
 
 
+def find_best(pop, k, dimension):
+    best = pop[0]
+    for xy in range(k):
+        if pop[xy][dimension] <= best[dimension]:
+            best = pop[xy].copy()
+    return best
+
+
+def true_form(x, dim):
+    for h in range(dim-1):
+        x[h] = x[h] + 1
+    return x
+
+
+def route_finder(k, dimension):
+    pop = []
+    mutation_rate = 0.01
+    #stworzorzenie osobników
+    for z in range(k):
+        pop.append(create_entity(dimension))
+    for an in range(z):
+        children = []
+        for population in range(k):
+            children.append(tournament_selection(pop, k, dimension))
+        pop = children.copy()
+        children = []
+        for magic in range(0, k, 2):
+            p1, p2 = pop[magic], pop[magic + 1]
+            child1 = cross(p1, p2, dimension)
+            child2 = cross(p2, p1, dimension)
+            mutate(child1, mutation_rate)
+            mutate(child2, mutation_rate)
+            rewrite_score(child1, dimension)
+            rewrite_score(child2, dimension)
+            children.append(child1)
+            children.append(child2)
+        pop = children.copy()
+    best_route = find_best(pop, k, dimension)
+    true_form(best_route, dimension)
+    return best_route
+
+
+
 if __name__ == '__main__':
     cities_set = []
     cities_tups = []
     file_data = "ulysses16.tsp"
-    k = 24
-    pop = []
+    k = 100
+    z = 100
     #Stworzenie nie edytowalnej listy z miastami
     dimension = produce_final(file_data)
     dimension = int(dimension)
     #stworzenie listy dystansów
     distance_matrix = create_matrix_of_distance(dimension)
-    #stworzorzenie osobników
-    for z in range(k):
-        pop.append(create_entity(dimension))
-    # selekcja
-    children = []
-    for z in range(k):
-        children.append(tournament_selection(pop, k, dimension))
-    pop = children.copy()
-    print(cross(pop[0], pop[1], dimension))
-
-    #mut
-    #repeat
-    #goodprint
-
-
-
-
-
-    #if a[dimension] < b[dimension]:
-    #    b = rewrite_score(a, dimension)
-    #else:
-    #    print(b)
-#Dodać w najlepszym wyniku dodatkowe 1 do każdego miejsca aby działało pikobelo
-
+    with open('wyniki.txt', 'w') as f:
+        sys.stdout = f
+        for i in range(0, 10):
+            print(route_finder(k, dimension))
+        f.close()
