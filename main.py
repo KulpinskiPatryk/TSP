@@ -9,6 +9,7 @@ def read_tsp_data(tsp_name):
     with open(tsp_name) as f:
         content = f.read().splitlines()
         cleaned = [x.lstrip() for x in content if x != ""]
+        cleaned = [" ".join(x.split()) for x in content if x != ""]
         return cleaned
 
 
@@ -110,29 +111,31 @@ def tournament_selection(pop, k, dimension):
     return best
 
 
-def cross(parent1, parent2, dimension):
+def cross(parent1, parent2, dimension, crossing_rate):
     child = []
     child_p1 = []
     child_p2 = []
+    if np.random.rand() < crossing_rate:
+        gene_a = random.randint(0, dimension-2)
+        gene_b = random.randint(0, dimension-2)
 
-    gene_a = random.randint(0, dimension-2)
-    gene_b = random.randint(0, dimension-2)
+        start_gene = min(gene_a, gene_b)
+        endGene = max(gene_a, gene_b)
 
-    start_gene = min(gene_a, gene_b)
-    endGene = max(gene_a, gene_b)
+        for i in range(start_gene, endGene):
+            child_p1.append(parent1[i])
 
-    for i in range(start_gene, endGene):
-        child_p1.append(parent1[i])
+        child_p2 = [item for item in parent2 if item not in child_p1]
 
-    child_p2 = [item for item in parent2 if item not in child_p1]
-
-    child = child_p1 + child_p2
-    return child
+        child = child_p1 + child_p2
+        return child
+    else:
+        return parent1
 
 
 def mutate(individual, mutationRate):
     for swapped in range(len(individual)-1):
-        if (random.random() < mutationRate):
+        if random.random() < mutationRate:
             swapWith = int(random.random() * (len(individual)-1))
 
             city1 = individual[swapped]
@@ -157,12 +160,12 @@ def true_form(x, dim):
     return x
 
 
-def route_finder(k, dimension):
+def route_finder(k, dimension, crossing_rate, mutation_rate):
     pop = []
-    mutation_rate = 0.01
     #stworzorzenie osobników
     for z in range(k):
         pop.append(create_entity(dimension))
+    best_best_route = pop[0]
     for an in range(z):
         children = []
         for population in range(k):
@@ -171,8 +174,8 @@ def route_finder(k, dimension):
         children = []
         for magic in range(0, k, 2):
             p1, p2 = pop[magic], pop[magic + 1]
-            child1 = cross(p1, p2, dimension)
-            child2 = cross(p2, p1, dimension)
+            child1 = cross(p1, p2, dimension, crossing_rate)
+            child2 = cross(p2, p1, dimension, crossing_rate)
             mutate(child1, mutation_rate)
             mutate(child2, mutation_rate)
             rewrite_score(child1, dimension)
@@ -180,10 +183,11 @@ def route_finder(k, dimension):
             children.append(child1)
             children.append(child2)
         pop = children.copy()
-    best_route = find_best(pop, k, dimension)
-    true_form(best_route, dimension)
-    return best_route
-
+        best_route = find_best(pop, k, dimension)
+        if best_route[dimension] < best_best_route[dimension]:
+            best_best_route = best_route
+    true_form(best_best_route, dimension)
+    return best_best_route
 
 
 if __name__ == '__main__':
@@ -192,6 +196,8 @@ if __name__ == '__main__':
     file_data = "ulysses16.tsp"
     k = 100
     z = 100
+    mutation_rate = 0.05
+    crossing_rate = 0.9
     #Stworzenie nie edytowalnej listy z miastami
     dimension = produce_final(file_data)
     dimension = int(dimension)
@@ -200,5 +206,12 @@ if __name__ == '__main__':
     with open('wyniki.txt', 'w') as f:
         sys.stdout = f
         for i in range(0, 10):
-            print(route_finder(k, dimension))
+            #Wynik a poźniej po spacji miasta
+            route = route_finder(k, dimension, crossing_rate, mutation_rate)
+            print(route[dimension], end='')
+            print(' ', end='')
+            for i in range(dimension-1):
+                print(route[i], end='')
+                print(' ', end='')
+            print()
         f.close()
