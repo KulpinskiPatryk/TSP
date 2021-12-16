@@ -2,6 +2,7 @@ import random
 import re
 import numpy as np
 import sys
+import time
 
 
 def read_tsp_data(tsp_name):
@@ -160,13 +161,15 @@ def true_form(x, dim):
     return x
 
 
-def route_finder(k, dimension, crossing_rate, mutation_rate):
+def route_finder(k, z, dimension, crossing_rate, mutation_rate):
     pop = []
+    time_out = time.time() + z
     #stworzorzenie osobników
-    for z in range(k):
+    for zz in range(k):
         pop.append(create_entity(dimension))
     best_best_route = pop[0]
-    for an in range(z):
+    #for an in range(z):
+    while True:
         children = []
         for population in range(k):
             children.append(tournament_selection(pop, k, dimension))
@@ -186,6 +189,8 @@ def route_finder(k, dimension, crossing_rate, mutation_rate):
         best_route = find_best(pop, k, dimension)
         if best_route[dimension] < best_best_route[dimension]:
             best_best_route = best_route
+        if time.time() > time_out:
+            break
     true_form(best_best_route, dimension)
     return best_best_route
 
@@ -193,9 +198,12 @@ def route_finder(k, dimension, crossing_rate, mutation_rate):
 if __name__ == '__main__':
     cities_set = []
     cities_tups = []
-    file_data = "ulysses16.tsp"
-    k = 100
-    z = 100
+    file_data = "bier127.tsp"
+    k = 50
+    # czas na wykonanie jedneo przejścia
+    z = 1
+    # konwersja na sekundy
+    z = z * 60
     mutation_rate = 0.05
     crossing_rate = 0.9
     #Stworzenie nie edytowalnej listy z miastami
@@ -203,11 +211,11 @@ if __name__ == '__main__':
     dimension = int(dimension)
     #stworzenie listy dystansów
     distance_matrix = create_matrix_of_distance(dimension)
-    with open('wyniki.txt', 'w') as f:
+    with open('wynik.txt', 'w') as f:
         sys.stdout = f
         for i in range(0, 10):
             #Wynik a poźniej po spacji miasta
-            route = route_finder(k, dimension, crossing_rate, mutation_rate)
+            route = route_finder(k, z, dimension, crossing_rate, mutation_rate)
             print(route[dimension], end='')
             print(' ', end='')
             for i in range(dimension-1):
